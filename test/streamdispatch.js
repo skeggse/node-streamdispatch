@@ -1,3 +1,4 @@
+var when = require('when');
 var expect = require('expect.js');
 var Dispatch = require('..');
 
@@ -30,8 +31,9 @@ describe('streamdispatch', function() {
     }
 
     function register(n) {
-      stream.register(function(entry, callback) {
+      stream.register(function(entry) {
         expect(entry).to.equal(entries[typeof n === 'number' ? n : id]);id++;
+        return when.defer().promise;
       });
     }
 
@@ -97,26 +99,30 @@ describe('streamdispatch', function() {
 
     it('should resolve in-order', function(done) {
       handleEnd(done);
-      stream.register(function(entry, callback) {
-        callback(replies[entries.indexOf(entry)]);
+      stream.register(function(entry) {
+        return when.resolve(replies[entries.indexOf(entry)]);
       });
       writeAll();
       stream.end();
     });
 
     it('should resolve out-of-order', function(done) {
-      var swap = false;
+      var offset = 0, value = false, deferred = null;
       handleEnd(done);
       stream.register(function(entry, callback) {
         var reply = replies[entries.indexOf(entry)];
-        if (swap === false)
-          swap = callback.bind(null, reply);
-        else if (swap) {
-          callback(reply);
-          swap();
-          swap = null;
-        } else
-          callback(reply);
+        switch (offset++) {
+        case 0:
+          value = reply;
+          deferred = when.defer();
+          return deferred.promise;
+        case 2:
+          deferred.resolve(value);
+        case 1:
+          return when.resolve(reply);
+        //default:
+          // what?
+        }
       });
       writeAll();
       stream.end();
@@ -125,11 +131,13 @@ describe('streamdispatch', function() {
     it('should resolve in-order asynchronous', function(done) {
       var offset = 0;
       handleEnd(done);
-      stream.register(function(entry, callback) {
+      stream.register(function(entry) {
+        var deferred = when.defer();
         var reply = replies[entries.indexOf(entry)];
         setTimeout(function() {
-          callback(reply);
+          deferred.resolve(reply);
         }, ++offset);
+        return deferred.promise;
       });
       writeAll();
       stream.end();
@@ -138,11 +146,13 @@ describe('streamdispatch', function() {
     it('should resolve out-of-order asynchronous', function(done) {
       var offset = 0, times = [2, 1, 3];
       handleEnd(done);
-      stream.register(function(entry, callback) {
+      stream.register(function(entry) {
+        var deferred = when.defer();
         var reply = replies[entries.indexOf(entry)];
         setTimeout(function() {
-          callback(reply);
+          deferred.resolve(reply);
         }, times[offset++]);
+        return deferred.promise;
       });
       writeAll();
       stream.end();

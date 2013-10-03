@@ -3,6 +3,8 @@ node-streamdispatch
 
 A duplex stream dispatcher which preserves order when processing streamed tasks.
 
+This is the promises version, which is simpler in implementation but less node-like.
+
 Install
 =======
 
@@ -33,9 +35,12 @@ var dispatch = new Dispatch();
 
 src.pipe(dispatch).pipe(dest);
 
-dispatch.register(function(data, callback) {
+dispatch.register(function(data) {
+  // use whatever Promises/A framework you want
+  var deferred = when.defer();
   // transform the data, synchronously or asynchronously. if the operation is
   // guaranteed synchronous, then this module is probably not for you
+  return deferred.promise;
 });
 ```
 
@@ -55,12 +60,16 @@ var dispatch = new Dispatch();
 
 src.pipe(dispatch).pipe(dest);
 
-dispatch.register(function(data, callback) {
+dispatch.register(function(data) {
+  var deferred = when.defer();
   // handle the data!
+  return deferred.promise;
 });
 
-dispatch.register(function(data, callback) {
+dispatch.register(function(data) {
+  var deferred = when.defer();
   // handle the data in some other way (will still be from the same stream)
+  return deferred.promise;
 });
 ```
 

@@ -22,6 +22,7 @@
     "orderly"
   ],
   "devDependencies": {
+    "when": "~2.4.0",
     "expect.js": "~0.2.0",
     "mocha": "~1.13.0"
   },
