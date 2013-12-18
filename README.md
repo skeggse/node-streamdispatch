@@ -1,6 +1,8 @@
 node-streamdispatch
 ===================
 
+[![Build Status](https://travis-ci.org/skeggse/node-streamdispatch.png)](https://travis-ci.org/skeggse/node-streamdispatch)
+
 A duplex stream dispatcher which preserves order when processing streamed tasks.
 
 Install
